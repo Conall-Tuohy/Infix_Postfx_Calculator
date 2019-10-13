@@ -48,13 +48,14 @@ void apply_operator(struct double_stack * stack, char operator){
   switch(operator){
 	  case '+': double_stack_push(stack, a+b); break;
 	  case 'x': double_stack_push(stack, a*b); break;
-	  case '/': double_stack_push(stack, a/b); break;
-	  case '-': double_stack_push(stack, a-b); break;
-	  case '^': double_stack_push(stack, pow(a, b)); break;
+	  case '/': double_stack_push(stack, b/a); break;
+	  case '-': double_stack_push(stack, b-a); break;
+	  case '^': double_stack_push(stack, pow(b, a)); break;
 	  default: break;}//switch end
 }
 //Postfix Calc
 double evaluate_postfix_expression(char ** argv, int argc){
+  for(int i = argc-1; i>=0; i--){printf("%i: %s\n",i , argv[i]);}
   struct double_stack * stack;
   stack = double_stack_new(argc);
   double value;
@@ -88,8 +89,9 @@ return(value);
 //isNumber function
 int isNumber(char* characterArray){
   for(int i = 0; i<strlen(characterArray); i++){
-    if (!(characterArray[i] <= '9' || characterArray[i] >= '0')) return 0;
-  } return 1;
+    if (!(characterArray[i] <= '9' && characterArray[i] >= '0')) return 0;
+    else return 1;
+  } 
 }
 
 //operatorPrecendence
@@ -107,11 +109,12 @@ int operatorPrecendence(int operator){
 
 
 //Infix Calc
-int evaluate_infix_expression(char ** argv, int argc){
+float evaluate_infix_expression(char ** argv, int argc){
  struct double_stack * operator_stack  = double_stack_new(argc);
  char ** postfix_String = malloc(sizeof(double)*argc);
  int postfix_String_Index = 0;
   for (int i=0; i<argc; i++) {
+      printf("Hit for loop for %s\n", argv[i]);
   if (isNumber(argv[i])){
     postfix_String[postfix_String_Index] = argv[i];
     postfix_String_Index++;
@@ -119,22 +122,28 @@ int evaluate_infix_expression(char ** argv, int argc){
   else if (argv[i][0] == '(') {												// if '('
     double_stack_push(operator_stack, argv[i][0]);
   }
-  else if ( argv[i] == "+" || argv[i] == "x" || argv[i] == "/" || argv[i] == "-" || argv[i] == "^" ) {	//if 'operator'
+  else if ((argv[i][0] == '+') || (argv[i][0] == 'x')||(argv[i][0] == '/')||(argv[i][0] == '-')||(argv[i][0] == '^')) {	//if 'operator'
 	int operatorTag = operatorPrecendence(argv[i][0]);
-    for(int j = ((operator_stack->top)/sizeof(double)); j<=0 && ((operator_stack->top)/sizeof(double) != 0); j--){
-	if((operator_stack->items[j] == '^') && (operatorTag!=3)){
+	printf("Hit operator if statement. Operator Tag is %i\n", operatorTag);
+    for(int j = ((operator_stack->top)/sizeof(double)); j>0 && ((operator_stack->top)/sizeof(double) != 0); j-=16){
+        printf("Got into second for loop\n");
+	if((operator_stack->items[j] == 94) && (operatorTag!=3)){
+	 printf("%s", postfix_String[postfix_String_Index-1]);
 	 postfix_String[postfix_String_Index] = "^";
 	 double_stack_pop(operator_stack);
 	 postfix_String_Index++;
 	 continue;
 	}
-	else if ((operator_stack->items[j] == 'x' || operator_stack->items[j] == '/') && operatorTag<=2){
+	else if((operator_stack->items[j] == 120.0 /*x*/ || operator_stack->items[j] == 47.0/*/*/) && operatorTag<=2){
+	    printf("Got into proper loop for + or -.\n");
 	   if(operator_stack->items[j] == 'x'){
+	          printf("%s", postfix_String[postfix_String_Index-1]);
 	          postfix_String[postfix_String_Index] = "x";
 	   	      double_stack_pop(operator_stack);
 	          postfix_String_Index++;
 	          continue;
 	   } else if (operator_stack->items[j] == '/'){
+	          printf("%s", postfix_String[postfix_String_Index-1]);
 	          postfix_String[postfix_String_Index] = "/";
 	   	      double_stack_pop(operator_stack);
 	          postfix_String_Index++;
@@ -142,6 +151,7 @@ int evaluate_infix_expression(char ** argv, int argc){
 	   } else printf("Weird thing in the infix");
      }//if end
     }//for end
+     printf("Hit operator: %s\n", argv[i]);
      double_stack_push(operator_stack, argv[i][0]);
   }
   else if ( argv[i][0] == ')') {											//if ')'
@@ -149,9 +159,13 @@ int evaluate_infix_expression(char ** argv, int argc){
       double_stack_pop(operator_stack);
      }double_stack_pop(operator_stack);
   }//if end
+ //printf("%s", postfix_String[postfix_String_Index]);
 }//for end
+ printf("Operator stack: %i\n", operator_stack->top);
  while(operator_stack->top != 0){
-     switch((int)double_stack_pop(operator_stack)){
+     int endoperator = double_stack_pop(operator_stack);
+     printf("Popping operator Stack of: %i\n", endoperator);
+     switch(endoperator){
 	case '+': 
 	          postfix_String[postfix_String_Index] = "+";
 	          postfix_String_Index++;
@@ -165,17 +179,16 @@ int evaluate_infix_expression(char ** argv, int argc){
 	          postfix_String_Index++;
 	          break;
 	case '/':
-		      postfix_String[postfix_String_Index] = "x";
+		      postfix_String[postfix_String_Index] = "/";
 	          postfix_String_Index++;
 	          break;
 	 case '^':
-		      postfix_String[postfix_String_Index] = "x";
+		      postfix_String[postfix_String_Index] = "^";
 	          postfix_String_Index++;
 	          break;
 	default: break;
  }
 }
- //for(int i = postfix_String_Index; i>0; i--){printf("%s", postfix_String[i]);}
  return evaluate_postfix_expression(postfix_String, postfix_String_Index);
 }//function end
 
